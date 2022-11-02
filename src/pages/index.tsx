@@ -3,12 +3,37 @@ import bannerPreview from '../assets/banner.png'
 import logo from '../assets/logo.svg'
 import usersExampleImg from '../assets/users-example.png'
 import iconChecked from '../assets/icon-checked.svg'
+import { api } from "../lib/api"
+import { FormEvent, useState } from "react"
 
 interface HomeProps {
-  count: number
+  poolsCount: number,
+  guessesCount: number,
+  usersCount: number,
 }
 
-const Home = ({ count }: HomeProps) => {
+const Home = ({ poolsCount, guessesCount, usersCount }: HomeProps) => {
+  const [poolTitle, setPoolTitle] = useState('')
+
+  const handleSubmitForm = async (event: FormEvent) => {
+    event.preventDefault()
+
+    try {
+      const response = await api.post('/pools', {
+        title: poolTitle,
+      })
+
+      const { code } = response.data
+
+      navigator.clipboard.writeText(code)
+
+      alert('Bolão criado com sucesso, o código foi copiado na área de transferência')
+
+    } catch (err) {
+      console.log(err)
+      alert('Falha ao criar bolão, tente novamente')
+    }
+  } 
   return (
     <div className="h-screen mx-auto max-w-[1124px] grid grid-cols-2 items-center gap-28">
       <main>
@@ -28,17 +53,19 @@ const Home = ({ count }: HomeProps) => {
           />
 
           <strong className="text-xl text-gray-100 leading-relaxed font-bold">
-            <span className="text-green-300">+12.592</span> pessoas já estão usando
+            <span className="text-green-300">+{usersCount}</span> pessoas já estão usando
           </strong>
 
         </div>
 
-        <form className="mt-10 flex gap-2">
+        <form className="mt-10 flex gap-2" onSubmit={handleSubmitForm}>
 
           <input
-            className="flex-1 py-4 px-6 bg-gray-800 border border-gray-500 rounded text-white outline-0 text-sm"
+            className="flex-1 py-4 px-6 bg-gray-800 border border-gray-500 rounded text-gray-100 outline-0 text-sm"
             type="text"
             placeholder="Qual nome do seu bolão?"
+            value={poolTitle}
+            onChange={(e) => setPoolTitle(e.target.value)}
           />
 
           <button
@@ -57,18 +84,18 @@ const Home = ({ count }: HomeProps) => {
           <div className="flex items-center gap-6 text-gray-100">
             <Image src={iconChecked} alt="" />
             <div className="flex flex-col text">
-              <span className="font-bold text-2xl">+2021</span>
+              <span className="font-bold text-2xl">+{poolsCount}</span>
               <span className="font-normal text-base">Bolões criados </span>
             </div>
           </div>
 
-          <div />
+          <div className="w-[1px] bg-gray-500 h-14" />
 
           <div className="flex items-center gap-6 text-gray-100">
             <Image src={iconChecked} alt="" />
             <div className="flex flex-col text">
-              <span className="font-bold text-2xl">+2021</span>
-              <span className="font-normal text-base">Bolões criados </span>
+              <span className="font-bold text-2xl">+{guessesCount}</span>
+              <span className="font-normal text-base">Palpites enviados</span>
             </div>
           </div>
         </div>
@@ -88,14 +115,19 @@ const Home = ({ count }: HomeProps) => {
 export default Home
 
 export const getServerSideProps = async () => {
-  const response = await fetch('http://localhost:3333/pools/count')
-  const data = await response.json()
 
-  console.log(data)
+  const [poolCountResponse, guessesCountResponse, userCountResponse] = await Promise.all([
+    api.get('/pools/count'),
+    api.get('/guesses/count'),
+    api.get('/users/count'),
+  ])
+
 
   return {
     props: {
-      count: data.count
+      poolsCount: poolCountResponse.data.count,
+      guessesCount: guessesCountResponse.data.count,
+      usersCount: userCountResponse.data.count,
     }
   }
 }

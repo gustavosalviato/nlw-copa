@@ -11,6 +11,10 @@ module.exports = {
         sans: 'Roboto, sans-serif',
       },
 
+      backgroundImage: {
+        app: 'url(/bg-app.png)',
+      },
+
       colors: {
         green: {
           300: '#129E57',
